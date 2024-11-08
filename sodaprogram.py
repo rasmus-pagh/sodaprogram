@@ -267,6 +267,7 @@ def generate_html(all_talks_by_day, main_heading, max_concurrent_sessions=4, url
     html_content = f'''
     <html>
     <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <title>{main_heading}</title>
         <style>
             table {{ width: 100%; border-collapse: collapse; }}
