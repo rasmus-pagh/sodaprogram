@@ -10,6 +10,8 @@ import re
 from datetime import datetime
 import sys
 
+output_folder = 'html/'
+
 # Configure logging to capture debug information
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -259,7 +261,7 @@ def fetch_all_session_details(grouped_sessions):
     logging.info(f"Total sessions with talks fetched: {sum(len(sessions) for day in all_talks_by_day for sessions in all_talks_by_day[day].values())}")
     return all_talks_by_day
 
-def generate_html(all_talks_by_day, main_heading, max_concurrent_sessions=4):
+def generate_html(all_talks_by_day, main_heading, max_concurrent_sessions=4, url=None):
     """Generate HTML output with aligned concurrent talks by time slots."""
     # Start building the HTML content with dynamic main heading
     html_content = f'''
@@ -280,6 +282,11 @@ def generate_html(all_talks_by_day, main_heading, max_concurrent_sessions=4):
     </head>
     <body>
         <h1>{main_heading}</h1>
+    '''
+    if url is not None:
+        todaysdate = datetime.now().isoformat()[:10]
+        html_content += f'<p>Generated {todaysdate} from the official program (<a href="{url}">link</a>)</p>'
+    html_content += '''    
         <table>
             <tbody>
     '''
@@ -342,7 +349,7 @@ def generate_html(all_talks_by_day, main_heading, max_concurrent_sessions=4):
                 html_content += '''
                     </tr>
                 '''
-    
+        
     # Close the table and HTML tags
     html_content += '''
             </tbody>
@@ -388,10 +395,10 @@ def main():
     logging.info(f"Maximum concurrent sessions identified: {max_sessions}")
     
     logging.info("Generating HTML output...")
-    html_output = generate_html(all_talks_by_day, main_heading, max_sessions)
+    html_output = generate_html(all_talks_by_day, main_heading, max_sessions, url)
     
     year = main_heading[:4]
-    output_file = f'conference_program_{year}.html'
+    output_file = f'{output_folder}conference_program_{year}.html'
     try:
         with open(output_file, 'w', encoding='utf-8') as file:
             file.write(html_output)
