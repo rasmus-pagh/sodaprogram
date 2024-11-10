@@ -189,12 +189,13 @@ def fetch_main_page(url):
     
     return grouped_sessions, main_heading
 
+
 def fetch_session_details(session_url, session_title):
-    """Fetch detailed talk information from session page."""
+    """Fetch detailed talk information from session page, ignoring content within <s></s> tags."""
     talks = []
     if not session_url.startswith("https://meetings.siam.org/sess"):
-        return talks # Return empty list for non-sessions
-    
+        return talks  # Return empty list for non-sessions
+
     try:
         response = http_session.get(session_url)
         response.raise_for_status()
@@ -202,21 +203,31 @@ def fetch_session_details(session_url, session_title):
     except requests.exceptions.RequestException as e:
         logging.error(f"Failed to fetch session page '{session_title}': {e}")
         return talks  # Return empty list if fetching fails
-    
+
     soup = BeautifulSoup(response.text, 'html.parser')
-    
+
+    # Remove all <s> tags and their content
+    for s_tag in soup.find_all('s'):
+        s_tag.decompose()
+    logging.debug("Removed all <s> tags from the HTML content.")
+
     # Assuming talks are listed within <dt> tags; adjust if necessary
     for talk in soup.find_all('dt'):
         title_tag = talk.find('strong')
-        title = title_tag.get_text(strip=True) if title_tag else "Unknown Title"
+        # If the <strong> tag contains nested tags (excluding <s> which are already removed)
+        title = title_tag.get_text(strip=True) if title_tag else None
+
         abstract_link = talk.find('a', href=True)
         talk_link = urljoin(session_url, abstract_link['href']) if abstract_link else "#"
-        talks.append({"title": title, "link": talk_link})
-    
+
+        if title is not None:
+            talks.append({"title": title, "link": talk_link})
+
     # For debugging: log the number of talks fetched
     logging.debug(f"Fetched {len(talks)} talks for session: {session_title}")
-    
+
     return talks
+
 
 def fetch_all_session_details(grouped_sessions):
     """Fetch details for all sessions concurrently."""
